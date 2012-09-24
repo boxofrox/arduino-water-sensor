@@ -1,0 +1,55 @@
+# Justin Charette
+#
+#
+# src/lib/SD/Makefile.in
+#
+
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+builddir = @builddir@
+top_builddir = @top_builddir@
+
+
+name = sd
+
+files = \
+	File.cpp \
+	SD.cpp \
+	utility/Sd2Card.cpp \
+	utility/SdFile.cpp \
+	utility/SdVolume.cpp
+
+sources = $(addprefix $(srcdir)/,$(files))
+objects = $(addsuffix .o, $(files))
+
+clean_files = \
+	$(objects) \
+	lib$(name).a
+
+CXXFLAGS += \
+	-I$(srcdir)/utility
+
+
+.PHONY: all
+all: lib$(name).a
+
+lib$(name).a: $(objects)
+
+.PHONY: clean
+clean:
+	@$(call clean,$(clean_files))
+
+utility:
+	@$(mkdir)
+
+utility/Sd2Card.cpp.o:	$(srcdir)/utility/Sd2Card.cpp	utility 
+utility/SdFile.cpp.o: 	$(srcdir)/utility/SdFile.cpp 	utility 
+utility/SdVolume.cpp.o: $(srcdir)/utility/SdVolume.cpp 	utility 
+
+utility/%.cpp.o: $(srcdir)/utility/%.cpp
+	@$(compile.cxx)
+
+include $(top_builddir)/arduino.mk
+include $(top_builddir)/include.mk
+

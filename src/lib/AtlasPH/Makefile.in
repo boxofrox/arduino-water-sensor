@@ -1,0 +1,46 @@
+# Justin Charette
+#
+#
+# src/lib/AtlasPH/Makefile.in
+#
+
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+builddir = @builddir@
+top_builddir = @top_builddir@
+
+
+name = atlas_ph
+
+files = 		\
+	AtlasPH.cpp
+
+sources = $(addprefix $(srcdir)/,$(files))
+objects = $(addsuffix .o, $(files))
+
+clean_files = 	\
+	$(objects) \
+	lib$(name).a
+
+
+CXXFLAGS += \
+	-I$(top_srcdir)/src/lib/SoftwareSerial
+
+LDFLAGS += \
+	-lm
+
+
+.PHONY: all
+all: lib$(name).a
+
+lib$(name).a: $(objects)
+
+.PHONY: clean
+clean:
+	@$(call clean,$(clean_files))
+
+
+include $(top_builddir)/arduino.mk
+include $(top_builddir)/include.mk
+

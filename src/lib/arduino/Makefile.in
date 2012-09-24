@@ -1,0 +1,58 @@
+# Justin Charette
+#
+#
+# src/lib/arduino/Makefile.in
+#
+
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+builddir = @builddir@
+top_builddir = @top_builddir@
+
+
+name = arduino
+
+files = 		\
+	CDC.cpp				\
+	HardwareSerial.cpp	\
+	HID.cpp				\
+	IPAddress.cpp		\
+	main.cpp			\
+	new.cpp				\
+	Print.cpp			\
+	Stream.cpp			\
+	Tone.cpp			\
+	USBCore.cpp			\
+	WInterrupts.c		\
+	wiring.c			\
+	wiring_analog.c 	\
+	wiring_digital.c	\
+	wiring_pulse.c		\
+	wiring_shift.c		\
+	WMath.cpp			\
+	WString.cpp
+
+sources = $(addprefix $(srcdir)/,$(files))
+objects = $(addsuffix .o, $(files))
+
+HEADERS = $(HEADERS) "$(srcdir)"
+
+clean_files = 	\
+	$(objects) \
+	lib$(name).a
+
+
+.PHONY: all
+all: lib$(name).a
+
+lib$(name).a: $(objects)
+
+.PHONY: clean
+clean:
+	@$(call clean,$(clean_files))
+
+
+include $(top_builddir)/arduino.mk
+include $(top_builddir)/include.mk
+

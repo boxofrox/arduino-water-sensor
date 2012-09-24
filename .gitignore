@@ -1,0 +1,5 @@
+/build/*
+configure
+/autom4te.cache/*
+/aux/*
+/m4/*

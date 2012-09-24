@@ -1,0 +1,103 @@
+export arduino_mcu := atmega328p
+export arduino_f_cpu := 8000000L
+export arduino_variant := eightanaloginputs
+export avrdude_mcu := m328p
+export avrdude_max_size := 32768
+
+export arduino_port := /dev/ttyUSB0
+export arduino_protocol := arduino
+
+ifeq ($(wildcard $(arduino_port)),)
+export arduino_port := /dev/ttyACM0
+export arduino_protocol := avrispv2
+endif
+
+abs_top_srcdir = @abs_top_srcdir@
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+
+export INCLUDES = \
+	-I$(abs_top_srcdir)/src
+
+export CFLAGS = \
+	-std=gnu99 \
+	-g -Os \
+	-fno-exceptions -ffunction-sections -fdata-sections \
+	$(INCLUDES) \
+	-D__AVR_ATmega328P__
+
+export CXXFLAGS = \
+	-g -Os \
+	-fno-exceptions -ffunction-sections -fdata-sections \
+	$(INCLUDES) \
+	-D__AVR_ATmega328P__
+
+tests = ez_ph_com rtc
+test_paths = $(addprefix src/test/,$(tests))
+
+lib_subdirs = arduino AtlasPH ds3231rtc OneWire PString SD SoftwareSerial Wire
+lib_paths = $(addprefix src/lib/,$(lib_subdirs))
+
+src_subdirs = main
+src_paths = $(addprefix src/,$(src_subdirs))
+
+subdirs = $(src_paths) $(lib_paths) $(test_paths)
+
+clean_subdirs = $(subdirs)
+
+.PHONY: all
+all: $(lib_paths) $(test_paths) $(src_paths)
+
+.PHONY: upload
+upload: src
+	@echo -e "\nuploading...\n"
+	@$(call arduino_upload,src/main/water.hex)
+
+.PHONY: upload-test
+upload-test: src/test/$(prog)
+	@echo -e "\nuploading..."
+	@echo -e "  => port    : $(arduino_port)"
+	@echo -e "  => protocol: $(arduino_protocol)"
+	@echo -e "  => hex file: $<\n"
+	@$(call arduino_upload,src/test/$(prog)/$(prog).hex)
+
+.PHONY: terminal
+terminal:
+	@echo -e "\nstarting avrdude terminal\n"
+	@$(call arduino_terminal)
+
+.PHONY: com
+com:
+	@if [[ `which minicom`x == x ]]; then					\
+		echo -e "\nprogram minicom not found\n";			\
+	 else													\
+		echo -e "\nstarting minicom -D /dev/ttyUSB0\n";		\
+		minicom -D /dev/ttyUSB0;							\
+	 fi
+
+.PHONY: size
+size:
+	@avr-size src/main/water.hex
+
+.PHONY: $(subdirs)
+src/main/water: 			$(addprefix src/lib/,arduino AtlasPH ds3231rtc OneWire SD SoftwareSerial)
+src/test/ez_ph_com:			$(addprefix src/lib/,arduino SoftwareSerial)
+
+$(subdirs):
+	@if test -d "$@"; then 		\
+		echo "  >>   $@/"; 		\
+		make -sC "$@"; 			\
+		echo "  <<   $@/"; 		\
+	 else 						\
+		echo "  missing $@/";	\
+	 fi
+
+
+.PHONY: clean
+clean:
+	@$(call clean,$(clean_subdirs))
+
+
+include arduino.mk
+include include.mk
+

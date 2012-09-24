@@ -1,0 +1,125 @@
+
+# arduino_mcu = 
+# arduino_f_cpu = 
+# arduino_port = 
+# arduino_variant = 
+
+ifndef ARDUINO_MK_
+ARDUINO_MK_ = 1
+
+arduino_homedir = /home/charetjc/programs/arduino-1.0.1
+arduino_variantdir = $(arduino_homedir)/hardware/arduino/variants
+arduino_coredir= $(arduino_homedir)/hardware/arduino/cores/arduino
+
+arduino_version = 101
+
+arduino_cflags = 										\
+	-g -Os -Wall -ffunction-sections -fdata-sections 	\
+	-mmcu=$(arduino_mcu) 								\
+	-DF_CPU=$(arduino_f_cpu) 							\
+	-DARDUINO=$(arduino_version)						\
+	-I$(arduino_variantdir)/$(arduino_variant)			\
+	-I$(arduino_coredir)
+
+arduino_cxxflags = 		\
+	-fno-exceptions 	\
+	$(arduino_cflags)
+
+arduino_ldflags = 			\
+	-Os -Wl,--gc-sections 	\
+	-mmcu=$(arduino_mcu) 
+
+arduino_eepflags = \
+	-O ihex \
+	-j .eeprom \
+	--set-section-flags=.eeprom=alloc,load \
+	--no-change-warnings \
+	--change-section-lma .eeprom=0
+
+arduino_hexflags = \
+	-O ihex \
+	-R .eeprom
+
+#avr_home = /usr/avr
+#avr_bin = /usr/bin
+#avr_cflags = \
+#	-I$(avr_home)/include
+
+avr_home = $(arduino_homedir)/hardware/tools/avr
+avr_bin = $(avr_home)/bin
+
+avr_cflags = \
+	-I$(avr_home)/lib/avr/include
+
+
+CC = $(avr_bin)/avr-gcc
+CXX = $(avr_bin)/avr-g++
+AR = $(avr_bin)/avr-ar
+OBJCOPY = $(avr_bin)/avr-objcopy
+OBJDUMP = $(avr_bin)/avr-objdump
+AVRDUDE = `which avrdude`
+MKDIR_P = mkdir -p 
+
+
+define mkdir
+test ! -d $@ && echo " mkdir $@" && $(MKDIR_P) $@
+endef
+
+define compile.c
+echo "  cc   $@"
+$(CC) -c $(arduino_cflags) $(avr_cflags) $(CFLAGS) -I$(srcdir) -o $@ $<
+endef
+
+define compile.cxx
+echo "  cxx  $@"
+$(CXX) -c $(arduino_cxxflags) $(avr_cxxflags) $(CXXFLAGS) -I$(srcdir) -o $@ $<
+endef
+
+
+define arduino_upload
+# $(AVRDUDE) -p $(avrdude_mcu) -c $(arduino_protocol) -P $(arduino_port) -e
+$(AVRDUDE) -p $(avrdude_mcu) -c $(arduino_protocol) -P $(arduino_port) -b 57600 -D -U flash:w:$1:i -F
+endef
+
+define arduino_terminal
+$(AVRDUDE) p $(avrdude_mcu) -c $(arduino_protocol) -P $(arduino_port) -b 57600 -t
+endef
+
+# avrdude -C$(arduino_homedir)/hardware/tools/avrdude.conf -p$(avrdude_mcu) -cavrispv2 -P/dev/ttyACM0 -b57600 -D -Uflash:w:/tmp/build2180408294998343569.tmp/Blink.cpp.hex:i 
+
+endif
+
+
+%.c.o: $(srcdir)/%.c
+	@$(compile.c)
+
+%.cpp.o: $(srcdir)/%.cpp
+	@$(compile.cxx)
+
+%.cpp.o: $(srcdir)/%.ino
+	@echo "  ext  $<"
+	@cat $< > $(notdir $(basename $<)).cpp
+	@echo "  cxx  $@"
+	@$(CXX) -o $@ -c $(arduino_cxxflags) $(avr_cxxflags) $(CXXFLAGS) -I$(srcdir) $(notdir $(basename $<)).cpp
+
+%.elf:
+	@echo "  lnk  $@"
+	@$(CC) $(arduino_ldflags) $+ $(LDFLAGS) -o $@
+
+%.eep: %.elf
+	@echo "  hex  $@"
+	@$(OBJCOPY) $(arduino_eepflags) $< $@
+
+%.hex: %.elf
+	@echo "  hex  $@"
+	@$(OBJCOPY) $(arduino_hexflags) $< $@
+
+%.a:
+	@echo "  ar   $^  >>  $@"
+	@for i in $?; do 					\
+		if test -f $$i; then			\
+			echo "  ar   $$i  >>  $@";	\
+			$(AR) rcs $@ $$i;			\
+		fi								\
+	 done
+

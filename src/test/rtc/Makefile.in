@@ -1,0 +1,58 @@
+# Justin Charette
+#
+#
+# src/test/rtc/Makefile.in
+
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+builddir = @builddir@
+top_builddir = @top_builddir@
+
+
+name = rtc
+
+sources = \
+	$(wildcard $(srcdir)/*.cpp)
+
+objects = 					\
+	$(addsuffix .o,$(notdir $(sources)))
+
+libs = \
+	$(top_builddir)/src/lib/arduino/libarduino.a \
+	$(top_builddir)/src/lib/Wire/libwire.a \
+	$(top_builddir)/src/lib/ds3231rtc/libds3231rtc.a
+
+clean_files = \
+	$(objects) \
+	$(name).elf
+
+LDFLAGS += \
+	-L$(top_builddir)/src/lib/arduino \
+	-L$(top_builddir)/src/lib/Wire \
+	-L$(top_builddir)/src/lib/ds3231rtc \
+	-L.	\
+	-lds3231rtc \
+	-lwire \
+	-larduino
+
+CXXFLAGS += \
+	-I$(top_srcdir)/src/lib/Wire \
+	-I$(top_srcdir)/src/lib/ds3231rtc
+
+.PHONY: all
+all: $(name).hex
+
+$(name).cpp.o:	$(sources)
+$(name).elf: 	$(objects) $(libs)
+$(name).hex: 	$(name).elf
+$(name).eep: 	$(name).elf
+
+.PHONY: clean
+clean:
+	@$(call clean,$(clean_files))
+
+
+include $(top_builddir)/arduino.mk
+include $(top_builddir)/include.mk
+

@@ -1,0 +1,80 @@
+# Justin Charette
+#
+#
+# src/Makefile.in
+#
+
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+builddir = @builddir@
+top_builddir = @top_builddir@
+
+
+# name of application
+name = water
+
+sources = \
+	$(wildcard $(srcdir)/*.cpp)
+
+objects = 					\
+	$(addsuffix .o,$(notdir $(sources)))
+
+libs = \
+	$(top_builddir)/src/lib/arduino/libarduino.a \
+	$(top_builddir)/src/lib/AtlasPH/libatlas_ph.a \
+	$(top_builddir)/src/lib/ds3231rtc/libds3231rtc.a \
+	$(top_builddir)/src/lib/OneWire/libonewire.a \
+	$(top_builddir)/src/lib/PString/libpstring.a \
+	$(top_builddir)/src/lib/SD/libsd.a \
+	$(top_builddir)/src/lib/SoftwareSerial/libsoftwareserial.a \
+	$(top_builddir)/src/lib/Wire/libwire.a
+
+clean_files = \
+	$(objects) \
+	$(name).elf
+
+CXXFLAGS += \
+	-I$(top_srcdir)/src/lib/AtlasPH \
+	-I$(top_srcdir)/src/lib/ds3231rtc \
+	-I$(top_srcdir)/src/lib/OneWire \
+	-I$(top_srcdir)/src/lib/PString \
+	-I$(top_srcdir)/src/lib/SD \
+	-I$(top_srcdir)/src/lib/SoftwareSerial \
+	-I$(top_srcdir)/src/lib/Wire
+
+LDFLAGS += \
+	-L$(top_builddir)/src/lib/arduino \
+	-L$(top_builddir)/src/lib/AtlasPH \
+	-L$(top_builddir)/src/lib/ds3231rtc \
+	-L$(top_builddir)/src/lib/OneWire \
+	-L$(top_builddir)/src/lib/PString \
+	-L$(top_builddir)/src/lib/SD \
+	-L$(top_builddir)/src/lib/SoftwareSerial \
+	-L$(top_builddir)/src/lib/Wire \
+	-L.	\
+	-lm \
+	-lds3231rtc \
+	-latlas_ph \
+	-lsoftwareserial \
+	-lsd \
+	-lonewire \
+	-lpstring \
+	-lwire \
+	-larduino
+
+.PHONY: all
+all: $(name).hex
+
+$(name).elf: $(objects) $(libs)
+$(name).hex: $(name).elf
+$(name).eep: $(name).elf
+
+.PHONY: clean
+clean:
+	@$(call clean,$(clean_files))
+
+
+include $(top_builddir)/arduino.mk
+include $(top_builddir)/include.mk
+

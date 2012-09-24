@@ -1,0 +1,28 @@
+#!/bin/sh
+
+do_autoconf() {
+    aclocal
+    autoconf
+}
+
+do_configure() {
+    cd build
+    ../configure --target=avr
+    cd ..
+}
+
+cd_project_root() {
+    [[ -f ../configure.ac ]] && pushd .. || pushd .
+}
+
+cd_restore() {
+    popd
+}
+
+cd_project_root
+if (($1)) || [[ ! -f ./configure ]] ; then
+    do_autoconf
+fi
+do_configure
+cd_restore
+

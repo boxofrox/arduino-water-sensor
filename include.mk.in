@@ -1,0 +1,27 @@
+
+
+define clean =
+for i in $1; do 								\
+	if test -d "$$i" -a -f "$$i/Makefile"; then \
+		echo "  >>   $$i"; 						\
+		make -sC $$i clean; 					\
+		echo "  <<   $$i";						\
+	elif test -f "$$i"; then					\
+		echo "  rm   $$i";						\
+		rm $$i;									\
+	else 										\
+		echo " skip  $$i";						\
+	fi 											\
+done
+endef
+
+define make_subdir =
+if test -d "$1"; then 		\
+	echo "  >>   $1/"; 		\
+	make -sC "$1"; 			\
+	echo "  <<   $1/"; 		\
+else 						\
+	echo "  missing $1/";	\
+fi
+endef
+
