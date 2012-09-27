@@ -45,6 +45,7 @@
 #include <SD.h>
 #include <stdlib.h>
 #include <Wire.h>
+#include <avr/pgmspace.h>
 
 
 /* datatypes ********************************************************/
@@ -109,22 +110,35 @@ const int8_t ERRSD_NO_FILESYS   = 2;
 
 
 /* temperature error messages for log file. 6 chars max. */
-const char *tempErrMsgs[] = {
-    "",             // 0    errt none
-    "no dev",       // 1    errt no device
-    "crc  x",       // 2    errt invalid crc
-    "dev ??",       // 3    errt unrecognized
-    "busy x",       // 4    errt 1wire busy
-    "ADC  x",       // 5    errt convert
+const char tempErrMsg_none[]    PROGMEM =   "";             // 0    errt none
+const char tempErrMsg_no_dev[]  PROGMEM =   "no dev";       // 1    errt no device
+const char tempErrMsg_crc[]     PROGMEM =   "crc  x";       // 2    errt invalid crc
+const char tempErrMsg_dev[]     PROGMEM =   "dev ??";       // 3    errt unrecognized
+const char tempErrMsg_busy[]    PROGMEM =   "busy x";       // 4    errt 1wire busy
+const char tempErrMsg_adc[]     PROGMEM =   "ADC  x";       // 5    errt convert
+
+PGM_P tempErrMsgs[] PROGMEM = {
+    tempErrMsg_none,    // 0    errt none
+    tempErrMsg_no_dev,  // 1    errt no device
+    tempErrMsg_crc,     // 2    errt invalid crc
+    tempErrMsg_dev,     // 3    errt unrecognized
+    tempErrMsg_busy,    // 4    errt 1wire busy
+    tempErrMsg_adc      // 5    errt convert
 };
 
 /* pH error error messages for log file. 5 chars max. */
-const char *phErrMsgs[] = {
-    "",             // 0 success
-    "huh? ",        // 1 bad response
-    "helo?",        // 2 no response
-    "check",        // 3 check sensor
-    "ver? ",        // 4 unknown version
+const char phErrMsg_none[]      PROGMEM =   "";             // 0 success
+const char phErrMsg_bad_resp[]  PROGMEM =   "huh? ";        // 1 bad response
+const char phErrMsg_no_resp[]   PROGMEM =   "helo?";        // 2 no response
+const char phErrMsg_check[]     PROGMEM =   "check";        // 3 check sensor
+const char phErrMsg_version[]   PROGMEM =   "ver? ";        // 4 unknown version
+
+PGM_P phErrMsgs[] PROGMEM = {
+    phErrMsg_none,      // 0 success
+    phErrMsg_bad_resp,  // 1 bad response
+    phErrMsg_no_resp,   // 2 no response
+    phErrMsg_check,     // 3 check sensor
+    phErrMsg_version    // 4 unknown version
 };
 
 /* real time clock */
@@ -382,12 +396,11 @@ void measure_and_record (Print& out) {
      */
     {
         char buffer[7] = { '\0' };
-        if (has_temp) {
+        if (has_temp)
             dtostrf( temperature, 6, 2, buffer );
-            out.print( buffer );
-        }
         else
-            out.print( tempErrMsgs[errorFlags.temp_sensor] );
+            strncpy_P( buffer, (PGM_P)pgm_read_word(&(tempErrMsgs[errorFlags.temp_sensor])), 6 );
+        out.print( buffer );
     }
 
     /* separator.  (1 char) */
@@ -398,12 +411,11 @@ void measure_and_record (Print& out) {
      */
     {
         char buffer[6] = { '\0' };
-        if (has_ph) {
+        if (has_ph)
             dtostrf( ph, 5, 2, buffer );
-            out.print( buffer );
-        }
         else
-            out.print( phErrMsgs[errorFlags.ph_sensor] );
+            strncpy_P( buffer, (PGM_P)pgm_read_word(&(phErrMsgs[errorFlags.ph_sensor])), 5 );
+        out.print( buffer );
     }
     
     /* end of line. (1 char) */
