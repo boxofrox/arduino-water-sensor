@@ -45,6 +45,7 @@
 #include <SD.h>
 #include <stdlib.h>
 #include <Wire.h>
+#include <avr/pgmspace.h>
 
 
 /* datatypes ********************************************************/
@@ -109,22 +110,35 @@ const int8_t ERRSD_NO_FILESYS   = 2;
 
 
 /* temperature error messages for log file. 6 chars max. */
-const char *tempErrMsgs[] = {
-    "",             // 0    errt none
-    "no dev",       // 1    errt no device
-    "crc  x",       // 2    errt invalid crc
-    "dev ??",       // 3    errt unrecognized
-    "busy x",       // 4    errt 1wire busy
-    "ADC  x",       // 5    errt convert
+const char tempErrMsg_none[]    PROGMEM =   "";             // 0    errt none
+const char tempErrMsg_no_dev[]  PROGMEM =   "no dev";       // 1    errt no device
+const char tempErrMsg_crc[]     PROGMEM =   "crc  x";       // 2    errt invalid crc
+const char tempErrMsg_dev[]     PROGMEM =   "dev ??";       // 3    errt unrecognized
+const char tempErrMsg_busy[]    PROGMEM =   "busy x";       // 4    errt 1wire busy
+const char tempErrMsg_adc[]     PROGMEM =   "ADC  x";       // 5    errt convert
+
+PGM_P tempErrMsgs[] PROGMEM = {
+    tempErrMsg_none,    // 0    errt none
+    tempErrMsg_no_dev,  // 1    errt no device
+    tempErrMsg_crc,     // 2    errt invalid crc
+    tempErrMsg_dev,     // 3    errt unrecognized
+    tempErrMsg_busy,    // 4    errt 1wire busy
+    tempErrMsg_adc      // 5    errt convert
 };
 
 /* pH error error messages for log file. 5 chars max. */
-const char *phErrMsgs[] = {
-    "",             // 0 success
-    "huh? ",        // 1 bad response
-    "helo?",        // 2 no response
-    "check",        // 3 check sensor
-    "ver? ",        // 4 unknown version
+const char phErrMsg_none[]      PROGMEM =   "";             // 0 success
+const char phErrMsg_bad_resp[]  PROGMEM =   "huh? ";        // 1 bad response
+const char phErrMsg_no_resp[]   PROGMEM =   "helo?";        // 2 no response
+const char phErrMsg_check[]     PROGMEM =   "check";        // 3 check sensor
+const char phErrMsg_version[]   PROGMEM =   "ver? ";        // 4 unknown version
+
+PGM_P phErrMsgs[] PROGMEM = {
+    phErrMsg_none,      // 0 success
+    phErrMsg_bad_resp,  // 1 bad response
+    phErrMsg_no_resp,   // 2 no response
+    phErrMsg_check,     // 3 check sensor
+    phErrMsg_version    // 4 unknown version
 };
 
 /* real time clock */
@@ -154,7 +168,10 @@ error_t         errorFlags;
  */
 void error_loop (void) {
     digitalWrite( ERROR_LED_PIN, HIGH );
-    for (;;) {}
+    for (;;) {
+        Serial.println( F("fatal error") );
+        delay( 2000 );
+    }
 } //}}}
 
 
@@ -227,7 +244,7 @@ int8_t get_temperature (float& dest) {
      */
     if (!tempCom.reset()) {
         /* 1wire bus unavailable. */
-        Serial.println( F("error: temp: bus is busy") );
+        // Serial.println( F("error: temp: bus is busy") );
         errorFlags.temp_sensor = ERRT_1WIRE_BUSY;
         return ERRT_1WIRE_BUSY;
     }
@@ -248,7 +265,7 @@ int8_t get_temperature (float& dest) {
      */
     if (!tempCom.reset()) {
         /* 1wire bus unavailable. */
-        Serial.println( F("error: temp: convert failed") );
+        // Serial.println( F("error: temp: convert failed") );
         errorFlags.temp_sensor = ERRT_CONVERT;
         return ERRT_CONVERT;
     }
@@ -319,7 +336,6 @@ void measure_and_record (Print& out) {
         switch (errorFlags.temp_sensor) {
             case ERRT_NONE:
                 has_temp = true;
-                break;
         }
     }
     
@@ -331,13 +347,6 @@ void measure_and_record (Print& out) {
         switch (errorFlags.ph_sensor) {
             case AtlasPH::SUCCESS:
                 has_ph = true;
-                break;
-            case AtlasPH::E_BAD_RESPONSE:
-                Serial.println( F("error: pH: bad read response") );
-                break;
-            case AtlasPH::E_NO_RESPONSE:
-                Serial.println( F("error: pH: no read response") );
-                break;
         }
     }
 
@@ -379,12 +388,11 @@ void measure_and_record (Print& out) {
      */
     {
         char buffer[7] = { '\0' };
-        if (has_temp) {
+        if (has_temp)
             dtostrf( temperature, 6, 2, buffer );
-            out.print( buffer );
-        }
         else
-            out.print( tempErrMsgs[errorFlags.temp_sensor] );
+            strncpy_P( buffer, (PGM_P)pgm_read_word(&(tempErrMsgs[errorFlags.temp_sensor])), 6 );
+        out.print( buffer );
     }
 
     /* separator.  (1 char) */
@@ -395,12 +403,11 @@ void measure_and_record (Print& out) {
      */
     {
         char buffer[6] = { '\0' };
-        if (has_ph) {
+        if (has_ph)
             dtostrf( ph, 5, 2, buffer );
-            out.print( buffer );
-        }
         else
-            out.print( phErrMsgs[errorFlags.ph_sensor] );
+            strncpy_P( buffer, (PGM_P)pgm_read_word(&(phErrMsgs[errorFlags.ph_sensor])), 5 );
+        out.print( buffer );
     }
     
     /* end of line. (1 char) */
@@ -439,8 +446,6 @@ void setup (void) {
     if (!find_temp_sensor_address()) {
         /* Debugging */
         Serial.println( F("error: temp: no sensor") );
-        /* error flags already set by find_temp_sensor_address(). */
-        error_loop();
     }
 
     /* try to detect pH sensor by retrieving version info. */
@@ -461,14 +466,12 @@ void setup (void) {
             Serial.print( F("error: pH: cannot talk to sensor: ") );
             Serial.println( ret, HEX );
             errorFlags.ph_sensor = ret;
-            error_loop();
         }
         /* validate version number. */
         if (0 != strcmp( "3.4", version_num )) {
             /* Debugging */
             Serial.println( F("error: pH: unknown version") );
             errorFlags.ph_sensor = ERRP_UNKNOWN_VERSION;
-            error_loop();
         }
 
         Serial.println( F("* pH sensor found V3.4") );
@@ -500,6 +503,9 @@ void setup (void) {
             }
             else if (counter < 100) {
                 itoa( counter, &(filename[6]), 10 );
+            }
+            else if (counter < 255) {
+                itoa( counter, &(filename[5]), 10 );
             }
             else {
                 Serial.println( F("error: sd: all files used") );
