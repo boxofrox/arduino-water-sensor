@@ -154,7 +154,10 @@ error_t         errorFlags;
  */
 void error_loop (void) {
     digitalWrite( ERROR_LED_PIN, HIGH );
-    for (;;) {}
+    for (;;) {
+        Serial.println( F("fatal error") );
+        delay( 2000 );
+    }
 } //}}}
 
 
@@ -439,8 +442,6 @@ void setup (void) {
     if (!find_temp_sensor_address()) {
         /* Debugging */
         Serial.println( F("error: temp: no sensor") );
-        /* error flags already set by find_temp_sensor_address(). */
-        error_loop();
     }
 
     /* try to detect pH sensor by retrieving version info. */
@@ -461,14 +462,12 @@ void setup (void) {
             Serial.print( F("error: pH: cannot talk to sensor: ") );
             Serial.println( ret, HEX );
             errorFlags.ph_sensor = ret;
-            error_loop();
         }
         /* validate version number. */
         if (0 != strcmp( "3.4", version_num )) {
             /* Debugging */
             Serial.println( F("error: pH: unknown version") );
             errorFlags.ph_sensor = ERRP_UNKNOWN_VERSION;
-            error_loop();
         }
 
         Serial.println( F("* pH sensor found V3.4") );
