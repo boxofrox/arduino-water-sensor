@@ -504,6 +504,9 @@ void setup (void) {
             else if (counter < 100) {
                 itoa( counter, &(filename[6]), 10 );
             }
+            else if (counter < 255) {
+                itoa( counter, &(filename[5]), 10 );
+            }
             else {
                 Serial.println( F("error: sd: all files used") );
                 error_loop();
