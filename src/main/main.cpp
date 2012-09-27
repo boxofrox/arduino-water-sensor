@@ -244,7 +244,7 @@ int8_t get_temperature (float& dest) {
      */
     if (!tempCom.reset()) {
         /* 1wire bus unavailable. */
-        Serial.println( F("error: temp: bus is busy") );
+        // Serial.println( F("error: temp: bus is busy") );
         errorFlags.temp_sensor = ERRT_1WIRE_BUSY;
         return ERRT_1WIRE_BUSY;
     }
@@ -265,7 +265,7 @@ int8_t get_temperature (float& dest) {
      */
     if (!tempCom.reset()) {
         /* 1wire bus unavailable. */
-        Serial.println( F("error: temp: convert failed") );
+        // Serial.println( F("error: temp: convert failed") );
         errorFlags.temp_sensor = ERRT_CONVERT;
         return ERRT_CONVERT;
     }
@@ -336,7 +336,6 @@ void measure_and_record (Print& out) {
         switch (errorFlags.temp_sensor) {
             case ERRT_NONE:
                 has_temp = true;
-                break;
         }
     }
     
@@ -348,13 +347,6 @@ void measure_and_record (Print& out) {
         switch (errorFlags.ph_sensor) {
             case AtlasPH::SUCCESS:
                 has_ph = true;
-                break;
-            case AtlasPH::E_BAD_RESPONSE:
-                Serial.println( F("error: pH: bad read response") );
-                break;
-            case AtlasPH::E_NO_RESPONSE:
-                Serial.println( F("error: pH: no read response") );
-                break;
         }
     }
 
